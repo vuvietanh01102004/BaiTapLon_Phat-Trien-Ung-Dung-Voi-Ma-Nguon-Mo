@@ -660,12 +660,170 @@ http://localhost:3000
 
 - Thêm Data Source InfluxDB
   + Nhấn Connections (menu trái) → Data sources → Add new data source
-<img width="1919" height="985" alt="image" src="https://github.com/user-attachments/assets/dc6f9661-3eab-4402-baba-344ec842a3f6" />
   + Tìm và chọn InfluxDB
+<img width="1919" height="985" alt="image" src="https://github.com/user-attachments/assets/dc6f9661-3eab-4402-baba-344ec842a3f6" />
+
 <img width="1919" height="990" alt="image" src="https://github.com/user-attachments/assets/5de9a27c-9db2-401d-84c8-4dc5102379bc" />
-  + ll
-  + mm
-  + 
+
+<img width="1919" height="988" alt="image" src="https://github.com/user-attachments/assets/f4979514-5d4a-4cac-9daa-c1d26bb23997" />
+
+- Điền thông tin:
+  + Query Language: `Flux`
+  + URL: `http://influxdb:8086`
+  + Organization: `myorg`
+  + Token: `mytoken123456`
+  + Default Bucket: `monitor_bucket`
+<img width="1919" height="905" alt="image" src="https://github.com/user-attachments/assets/3ca395d0-b79e-499b-ae46-1a14a21af337" />
+
+<img width="1568" height="733" alt="image" src="https://github.com/user-attachments/assets/8af14f74-b6ed-4cae-97a6-b2caa18a670d" />
+
+-> Nhấn Save & Test → Sẽ hiển thị `datasource is working`
+
+- Tạo Dashboard Grafana
+  + Nhấn Dashboards → New → New dashboard
+<img width="1923" height="990" alt="image" src="https://github.com/user-attachments/assets/dd7f4eda-2aa9-4aa8-8169-5c18d593b31b" />
+
+<img width="1919" height="907" alt="image" src="https://github.com/user-attachments/assets/587c4ad0-c699-49c8-9cea-30db961875e8" />
+  
+<img width="1919" height="903" alt="image" src="https://github.com/user-attachments/assets/b4672fdd-35f1-4c54-a60e-a51d06fc9bf8" />
+
+  + Chọn data source `influxdb`
+<img width="1919" height="899" alt="image" src="https://github.com/user-attachments/assets/06272409-44f1-46d4-bb3c-faf412f1de72" />
+
+- Nhấn vào ô query bên dưới → dán nội dung query này vào rồi ấn `Refresh` để chạy query và hiển thị biểu đồ
+```
+from(bucket: "monitor_bucket")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "gold_price")
+  |> filter(fn: (r) => r._field == "value")
+```
+<img width="1919" height="897" alt="image" src="https://github.com/user-attachments/assets/c8a4d232-a4ec-49c5-9e7d-0f928b50ab9f" />
+
+<img width="1919" height="905" alt="image" src="https://github.com/user-attachments/assets/fbeffb30-9c28-4601-9193-20ecb5c935a1" />
+
+- Đặt tên panel và lưu:
+  + Bên phải tìm ô Title → xóa `New panel` → gõ: `Giá Vàng Lịch Sử (USD/oz)`
+  + Nhấn Save
+  + Hộp thoại hiện ra → đặt tên dashboard: `Monitor Dashboard` → nhấn Save
+<img width="1919" height="902" alt="image" src="https://github.com/user-attachments/assets/d89886a5-faf7-4db9-9535-c8db2ce14fa2" />
+
+<img width="1919" height="907" alt="image" src="https://github.com/user-attachments/assets/28eb64d9-4d8a-43cf-94e0-22eaa37fd230" />
+
+- Nhấn Back to dashboard để về dashboard, rồi cần lấy URL embed của panel này để dùng trong iframe.
+<img width="1919" height="898" alt="image" src="https://github.com/user-attachments/assets/55d02327-1bd1-48ec-ae43-33cda8739f35" />
+
+- Nhấn vào tiêu đề panel `Giá Vàng Lịch Sử` → chọn `Share` → share embed → copy đoạn iframe URL.
+<img width="1919" height="902" alt="image" src="https://github.com/user-attachments/assets/10631ebc-ff93-4c62-be1c-e037e794ea86" />
+
+- iframe URL:
+```
+<iframe src="http://localhost:3000/d-solo/ad4lstv/monitor-dashboard?orgId=1&from=1781062466896&to=1781066041262&timezone=browser&tab=queries&panelId=panel-1" width="450" height="200" frameborder="0"></iframe>
+```
+<img width="1919" height="907" alt="image" src="https://github.com/user-attachments/assets/0d1757ea-a4dc-45ef-8896-5777cc26a9e9" />
+
+- Cập nhật file `index.html` để dùng iframe này: `nano ~/bt5-monitor-app/nginx/html/index.html`
+```
+cat > ~/bt5-monitor-app/nginx/html/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitor Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; margin: 0; padding: 20px; }
+    h1 { text-align: center; color: #00d4ff; }
+    .card { background: #16213e; border-radius: 12px; padding: 20px; margin: 20px auto; max-width: 800px; text-align: center; }
+    .value { font-size: 48px; font-weight: bold; color: #00d4ff; }
+    .label { font-size: 14px; color: #aaa; margin-top: 8px; }
+    .status-ok { color: #00ff88; }
+    .status-alert { color: #ff4444; }
+    iframe { width: 100%; height: 400px; border: none; border-radius: 12px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>📊 Monitor & Alert Dashboard</h1>
+  <div class="card">
+    <div class="value" id="current-value">--</div>
+    <div class="label">Giá Vàng (USD/oz) - Cập nhật tự động</div>
+    <div class="label" id="update-time"></div>
+    <div class="label" id="alert-status"></div>
+  </div>
+  <div class="card">
+    <h3>📈 Biểu đồ lịch sử (Grafana)</h3>
+    <iframe src="http://localhost:3000/d-solo/ad4lstv/monitor-dashboard?orgId=1&panelId=panel-1&refresh=30s&theme=dark" allowfullscreen></iframe>
+  </div>
+  <script>
+    const ALERT_LOW = 3000;
+    const ALERT_HIGH = 4000;
+    function fetchLatest() {
+      fetch('/api/latest')
+        .then(res => res.json())
+        .then(json => {
+          if (json.status === 'ok' && json.data) {
+            const val = json.data.value;
+            const time = json.data.timestamp;
+            document.getElementById('current-value').textContent = parseFloat(val).toFixed(2);
+            document.getElementById('update-time').textContent = 'Lúc: ' + time;
+            const statusEl = document.getElementById('alert-status');
+            if (val < ALERT_LOW) {
+              statusEl.textContent = '⚠️ ALERT LOW: Giá dưới ngưỡng!';
+              statusEl.className = 'label status-alert';
+            } else if (val > ALERT_HIGH) {
+              statusEl.textContent = '⚠️ ALERT HIGH: Giá vượt ngưỡng!';
+              statusEl.className = 'label status-alert';
+            } else {
+              statusEl.textContent = '✅ Bình thường';
+              statusEl.className = 'label status-ok';
+            }
+          }
+        })
+        .catch(err => console.error('Lỗi fetch:', err));
+    }
+    fetchLatest();
+    setInterval(fetchLatest, 5000);
+  </script>
+</body>
+</html>
+EOF
+```
+<img width="1919" height="1032" alt="image" src="https://github.com/user-attachments/assets/29b71ecc-66e6-493b-968d-17d633c02523" />
+
+<img width="1922" height="763" alt="image" src="https://github.com/user-attachments/assets/de8625ff-35a0-41ed-8dd4-b8d60666260b" />
+
+- Truy cập vào trình duyệt:
+```
+http://localhost
+```
+<img width="1919" height="981" alt="image" src="https://github.com/user-attachments/assets/7667bccf-69e1-49aa-a1f0-2ecca8d04a00" />
+
+- Export container ra file nén, xóa rồi load lại.
+- Chạy lệnh trên Ubuntu để export tất cả images:
+```
+cd ~/bt5-monitor-app
+docker save \
+  nodered/node-red:latest \
+  grafana/grafana:latest \
+  influxdb:2.7 \
+  mariadb:10.11 \
+  nginx:latest \
+  bt5-monitor-app-flask-api:latest \
+  -o bt5_monitor_images.tar
+```
+
+- Chờ vài phút rồi kiểm tra:
+```
+ls -lh bt5_monitor_images.tar
+```
+<img width="1923" height="447" alt="image" src="https://github.com/user-attachments/assets/70021467-37b8-4218-a1f8-25ef33c1f8ed" />
+
+
+
+
+
+
+
+
+
 
 
 
